@@ -54,7 +54,7 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         return super().default(obj)
 
-app.json_encoder = NpEncoder
+# NpEncoder is used via json.dumps(..., cls=NpEncoder) in each route
 
 # ============================================================
 # SIMPLE TTL CACHE (replaces @st.cache_data)
@@ -247,7 +247,7 @@ def ml_signals(df: pd.DataFrame) -> pd.Series:
         X = data.drop("y", axis=1).values; y = data["y"].astype(int).values
         scaler = StandardScaler(); X_sc = scaler.fit_transform(X)
         split  = int(len(X_sc) * 0.8)
-        clf    = RandomForestClassifier(n_estimators=60, random_state=42, n_jobs=-1)
+        clf    = RandomForestClassifier(n_estimators=40, random_state=42, n_jobs=1)
         clf.fit(X_sc[:split], y[:split])
         return pd.Series(clf.predict(X_sc), index=data.index).reindex(df.index).fillna(0)
     except Exception:
@@ -336,8 +336,8 @@ def ml_combo_score(df: pd.DataFrame, tfk: dict) -> pd.Series:
         if len(data) < 100: raise ValueError("insufficient")
         X = data.drop("y", axis=1).values; y = data["y"].astype(int).values
         sc = StandardScaler(); X_s = sc.fit_transform(X); sp = int(len(X_s) * 0.75)
-        clf = RandomForestClassifier(n_estimators=120, max_depth=7, min_samples_leaf=5,
-                                     class_weight="balanced", random_state=42, n_jobs=-1)
+        clf = RandomForestClassifier(n_estimators=60, max_depth=6, min_samples_leaf=8,
+                                     class_weight="balanced", random_state=42, n_jobs=1)
         clf.fit(X_s[:sp], y[:sp])
         probs = clf.predict_proba(X_s); cls_list = list(clf.classes_)
         pb = probs[:, cls_list.index(1)]  if  1 in cls_list else np.zeros(len(probs))
@@ -1001,7 +1001,7 @@ def analyze():
         dcf_wacc   = float(p.get('dcf_wacc', 0.10))
         dcf_tg     = float(p.get('dcf_tg',   0.03))
         dcf_yrs    = int(p.get('dcf_yrs',   5))
-        mc_n       = int(p.get('mc_n', 3000))
+        mc_n       = int(p.get('mc_n', 1000))
         sel_chart  = p.get('sel_chart', tickers[0] if tickers else '')
         sel_sim    = p.get('sel_sim',   tickers[0] if tickers else '')
 

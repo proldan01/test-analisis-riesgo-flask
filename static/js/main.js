@@ -150,13 +150,40 @@ async function runAnalysis() {
     return;
   }
   _lastParams = params;
-  setLoading(true, 'Fetching market data...');
+
+  // Animated loading messages so user knows it's working (can take 30-90 sec)
+  const messages = [
+    'Fetching market data from Yahoo Finance...',
+    'Computing technical indicators...',
+    'Running ML signals (Random Forest)...',
+    'Building charts...',
+    'Almost done...',
+  ];
+  let msgIdx = 0;
+  setLoading(true, messages[0]);
+  const msgInterval = setInterval(() => {
+    msgIdx = Math.min(msgIdx + 1, messages.length - 1);
+    document.getElementById('loadingText').textContent = messages[msgIdx];
+  }, 18000);
+
   try {
     const resp = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
+
+    clearInterval(msgInterval);
+
+    // Handle non-JSON responses (e.g. 504 Gateway Timeout HTML from Render)
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await resp.text();
+      setLoading(false);
+      showError(`Server error ${resp.status}: ${text.substring(0, 300)}`);
+      return;
+    }
+
     const data = await resp.json();
     if (!data.ok) {
       setLoading(false);
@@ -169,14 +196,16 @@ async function runAnalysis() {
     renderAll(data, params);
     setLoading(false);
   } catch (err) {
+    clearInterval(msgInterval);
     setLoading(false);
-    showError('Network error: ' + err.message);
+    showError('Connection error: ' + err.message +
+      '\n\nTip: The free Render server may have timed out. Try again with fewer tickers or a shorter date range.');
   }
 }
 
 function showError(msg) {
   const box = document.getElementById('welcomeBox');
-  box.innerHTML = `<div class="error-box">⚠️ ${escHtml(msg)}</div>`;
+  box.innerHTML = `<div class="error-box" style="text-align:left;white-space:pre-wrap">⚠️ ${escHtml(msg)}</div>`;
   box.style.display = 'block';
 }
 
