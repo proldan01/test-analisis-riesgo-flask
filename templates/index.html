@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Intelligence Platform</title>
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0f1923;color:#dce8f5;font-family:'Inter',sans-serif;font-size:14px;overflow-x:hidden}
+a{color:#5aadff;text-decoration:none}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.app-shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:310px;min-width:260px;background:#121e2d;border-right:1px solid #1e3550;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:1rem 1.5rem 2rem}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sb-header{padding:16px 16px 8px;border-bottom:1px solid #1e3550}
+.sb-title{color:#e0e0e0;font-size:1em;font-weight:700;font-family:'Share Tech Mono',monospace}
+.sb-subtitle{color:#7090b0;font-size:.72em;margin-top:2px}
+.sb-body{padding:12px 14px;flex:1}
+.sb-sec{color:#8aacca;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.13em;
+        margin:14px 0 8px;padding:5px 0 4px;border-bottom:1px solid #1e3550}
+.sb-label{color:#b8cce0;font-size:.78em;display:block;margin-bottom:3px}
+.sb-input{width:100%;background:#1a2e44;color:#dce8f5;border:1px solid #1e3550;border-radius:5px;
+          padding:6px 8px;font-size:.82em;outline:none;font-family:inherit}
+.sb-input:focus{border-color:#00e87a}
+.sb-select{width:100%;background:#1a2e44;color:#dce8f5;border:1px solid #1e3550;border-radius:5px;
+           padding:6px 8px;font-size:.82em;outline:none;cursor:pointer;font-family:inherit}
+.sb-select:focus{border-color:#00e87a}
+.sb-row{display:flex;gap:6px;margin-bottom:8px}
+.sb-row .sb-input,.sb-row .sb-select{flex:1;min-width:0}
+.sb-check-row{display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer}
+.sb-check-row input[type=checkbox]{accent-color:#00e87a;width:14px;height:14px;cursor:pointer}
+.sb-check-row span{color:#b8cce0;font-size:.79em}
+.sb-hr{border:none;border-top:1px solid #1e3550;margin:12px 0}
+.sb-range{width:100%;accent-color:#00e87a}
+.sb-range-row{display:flex;justify-content:space-between;font-size:.72em;color:#7090b0;margin-top:2px}
+.sb-ticker-row{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
+.sb-ticker-row .sb-input{flex:1}
+.sb-ticker-row .sb-select{flex:1}
+.sb-btn-row{display:flex;gap:6px;margin-bottom:8px}
+.btn{padding:7px 12px;border-radius:6px;border:none;font-size:.8em;font-weight:600;cursor:pointer;
+     font-family:inherit;letter-spacing:.04em;transition:all .2s}
+.btn-add{background:#1a2e44;border:1px solid #1e3550;color:#b8cce0;flex:1}
+.btn-add:hover{border-color:#00e87a;color:#00e87a}
+.btn-rem{background:#1a2e44;border:1px solid #1e3550;color:#b8cce0;flex:1}
+.btn-rem:hover{border-color:#ff4545;color:#ff4545}
+.btn-run{width:100%;padding:10px;background:linear-gradient(135deg,#1a52c0,#1e5edb);
+         border:1px solid #2a72f0;color:#fff;font-size:.88em;font-weight:700;
+         letter-spacing:.06em;border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace}
+.btn-run:hover{background:linear-gradient(135deg,#1e5edb,#2266f0);box-shadow:0 0 22px rgba(30,94,219,.45)}
+.btn-run:disabled{opacity:.5;cursor:not-allowed}
+.sb-caption{color:#5a7a96;font-size:.7em;text-align:center;margin-top:8px;line-height:1.5}
+.sb-footer{padding:10px 14px 16px;border-top:1px solid #1e3550}
+
+/* ── Main Header ─────────────────────────────────────────── */
+.page-header{border-bottom:1px solid #1e3550;padding-bottom:12px;margin-bottom:16px}
+.page-title{color:#e0e0e0;font-size:1.4em;font-weight:700;font-family:'Share Tech Mono',monospace}
+.page-sub{color:#7090b0;font-size:.78em;margin-top:3px}
+
+/* ── Welcome State ───────────────────────────────────────── */
+.welcome-box{background:#162233;border:1px solid #1e3550;border-radius:10px;
+             padding:32px;text-align:center;margin:24px 0}
+.welcome-box p{color:#8aacca;margin-top:8px;font-size:.9em}
+
+/* ── VIX Bar ─────────────────────────────────────────────── */
+.vix-bar{background:linear-gradient(135deg,#162233,#1c2d44);border:1px solid #1e3550;
+         border-radius:10px;padding:10px 18px;display:flex;justify-content:space-between;
+         align-items:center;margin-bottom:14px;max-width:400px}
+
+/* ── KPI cards ───────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.kpi-card{background:linear-gradient(135deg,#162233 0%,#1c2d44 100%);border:1px solid #1e3550;
+          border-radius:10px;padding:14px 16px;transition:border-color .25s,box-shadow .25s}
+.kpi-card:hover{border-color:#00e87a;box-shadow:0 0 20px rgba(0,232,122,.14)}
+.kpi-label{color:#7090b0;font-size:.7em;text-transform:uppercase;letter-spacing:.08em}
+.kpi-ticker{color:#ffd700;font-size:.95em;font-weight:700;font-family:'Share Tech Mono',monospace}
+.kpi-price{font-size:1.45em;font-weight:700;color:#f0f6ff}
+.kpi-pos{color:#00e87a;font-size:.88em;font-weight:600}
+.kpi-neg{color:#ff5555;font-size:.88em;font-weight:600}
+.kpi-sub{color:#5a7a96;font-size:.7em;margin-top:4px}
+
+/* ── Section header ──────────────────────────────────────── */
+.sec-hdr{border-left:3px solid #00e87a;padding-left:10px;color:#e8f2fc;font-size:.95em;
+         font-weight:600;margin:18px 0 10px;letter-spacing:.04em}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tab-bar{display:flex;border-bottom:1px solid #1e3550;margin-bottom:16px;gap:2px;overflow-x:auto;
+         background:#121e2d;border-radius:8px 8px 0 0;padding:4px 4px 0}
+.tab-btn{color:#6a8aa8;font-weight:500;padding:8px 16px;border-radius:6px 6px 0 0;
+         border:none;background:none;cursor:pointer;font-size:.83em;font-family:inherit;
+         white-space:nowrap;transition:all .15s}
+.tab-btn:hover{color:#b8cce0}
+.tab-btn.active{color:#00e87a!important;border-bottom:2px solid #00e87a;background:#162233}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ── Signal badges ───────────────────────────────────────── */
+.sig-buy{background:linear-gradient(135deg,#003d20,#005530);border:1px solid #00e87a;
+         color:#00e87a;padding:6px 18px;border-radius:20px;font-weight:700;text-align:center;
+         display:inline-block;font-family:'Share Tech Mono',monospace;letter-spacing:.1em;font-size:.9em}
+.sig-sell{background:linear-gradient(135deg,#3d0000,#550000);border:1px solid #ff5555;
+          color:#ff5555;padding:6px 18px;border-radius:20px;font-weight:700;text-align:center;
+          display:inline-block;font-family:'Share Tech Mono',monospace;letter-spacing:.1em;font-size:.9em}
+.sig-hold{background:linear-gradient(135deg,#3d3000,#554400);border:1px solid #ffd700;
+          color:#ffd700;padding:6px 18px;border-radius:20px;font-weight:700;text-align:center;
+          display:inline-block;font-family:'Share Tech Mono',monospace;letter-spacing:.1em;font-size:.9em}
+
+/* ── Tables ──────────────────────────────────────────────── */
+.data-table-wrap{overflow-x:auto;border:1px solid #1e3550;border-radius:8px;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:.78em}
+thead th{background:#162233;color:#8aacca;padding:8px 12px;text-align:left;
+         border-bottom:1px solid #1e3550;white-space:nowrap;font-weight:600}
+tbody td{color:#cce0f5;padding:7px 12px;border-bottom:1px solid #1a2840;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#162d44}
+
+/* ── Chart containers ────────────────────────────────────── */
+.chart-box{background:#0f1923;border:1px solid #1e3550;border-radius:8px;margin-bottom:14px;overflow:hidden}
+.echarts-container{width:100%;min-height:320px}
+.plotly-container{width:100%;min-height:300px}
+
+/* ── Signal card ─────────────────────────────────────────── */
+.signal-card{background:#162233;border:1px solid #1e3550;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.signal-card-header{display:flex;justify-content:space-between;align-items:center;
+                    cursor:pointer;user-select:none}
+.signal-card-title{color:#ffd700;font-weight:700;font-size:.9em;font-family:'Share Tech Mono',monospace}
+.signal-card-toggle{color:#8aacca;font-size:.8em}
+.signal-card-body{margin-top:12px}
+.sig-recs{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.sig-rec-col{flex:1;min-width:100px;text-align:center}
+.sig-rec-label{color:#7090b0;font-size:.7em;margin-bottom:4px}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.pros-list,.cons-list{font-size:.78em;color:#b8cce0}
+.pros-list li,.cons-list li{margin-bottom:4px;list-style:none;padding-left:16px;position:relative}
+.pros-list li::before{content:"✅ ";position:absolute;left:0}
+.cons-list li::before{content:"⚠️ ";position:absolute;left:0}
+.risks-list{font-size:.76em;color:#ff8080;margin-bottom:10px}
+.risks-list li{list-style:none;padding-left:16px;position:relative;margin-bottom:3px}
+.risks-list li::before{content:"🔴 ";position:absolute;left:0}
+
+/* ── Options strategy card ───────────────────────────────── */
+.strat-card{background:#162233;border:1px solid #1e3550;border-radius:6px;padding:10px 14px;margin:6px 0}
+.strat-name{font-weight:700;font-size:.87em}
+.strat-conf{color:#ffd700;font-size:.82em}
+.strat-why{color:#94a3b8;font-size:.78em;margin-top:3px}
+.strat-entry{color:#c8daf0;font-size:.76em;margin-top:3px}
+.strat-entry-label{color:#7090b0}
+
+/* ── News card ───────────────────────────────────────────── */
+.news-card{background:#162233;border:1px solid #1e3550;border-radius:8px;padding:8px 12px;margin:5px 0}
+.news-link{color:#5aadff;font-size:.82em}
+.news-pub{color:#5a7a96;font-size:.7em;margin-top:2px}
+
+/* ── Trend score bar ─────────────────────────────────────── */
+.trend-bar{background:#162233;border:1px solid #1e3550;border-radius:8px;
+           padding:8px 14px;margin-bottom:8px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.trend-bar .label{color:#7090b0;font-size:.72em}
+.trend-bar .val{font-size:1.2em;font-weight:700}
+.trend-bar .flags{color:#7090b0;font-size:.72em}
+
+/* ── DCF / Fundamentals ──────────────────────────────────── */
+.fund-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:14px}
+.fund-card{background:#162233;border:1px solid #1e3550;border-radius:7px;padding:9px 12px}
+.fund-label{color:#7090b0;font-size:.68em;text-transform:uppercase;letter-spacing:.05em}
+.fund-value{color:#f0f6ff;font-size:.95em;font-weight:600;font-family:'Share Tech Mono',monospace;margin-top:2px}
+.dcf-metrics{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dcf-metric{background:#162233;border:1px solid #1e3550;border-radius:7px;padding:10px 14px;flex:1;min-width:140px}
+.dcf-label{color:#7090b0;font-size:.7em;text-transform:uppercase}
+.dcf-value{color:#f0f6ff;font-size:1.3em;font-weight:700;font-family:'Share Tech Mono',monospace}
+
+/* ── MC weights ──────────────────────────────────────────── */
+.mc-weights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.mc-weight-card{background:#162233;border:1px solid #1e3550;border-radius:8px;padding:12px 14px}
+.mc-weight-title{font-weight:700;font-size:.85em;margin-bottom:8px}
+.mc-weight-row{display:flex;justify-content:space-between;font-size:.78em;color:#b8cce0;
+               border-bottom:1px solid #1e3550;padding:3px 0}
+.mc-caption{color:#7090b0;font-size:.72em;margin-top:6px}
+.mc-box{background:#162233;border:1px solid #1e3550;border-left:3px solid #5aadff;
+        border-radius:8px;padding:14px 18px;margin:10px 0;font-size:.84em;line-height:1.7;color:#c0d8f0}
+
+/* ── Info / warning boxes ────────────────────────────────── */
+.info-box{background:#162d42;border:1px solid #2a5078;border-radius:6px;
+          color:#b8d8f8;padding:10px 14px;font-size:.82em;margin:8px 0}
+.warn-box{background:#2a1f0a;border:1px solid #5a4010;border-radius:6px;
+          color:#f0c060;padding:10px 14px;font-size:.82em;margin:8px 0}
+.error-box{background:#2a0a0a;border:1px solid #5a1010;border-radius:6px;
+           color:#f08080;padding:10px 14px;font-size:.82em;margin:8px 0}
+
+/* ── Loading overlay ─────────────────────────────────────── */
+.loading-overlay{position:fixed;inset:0;background:rgba(15,25,35,.85);z-index:999;
+                 display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-overlay.active{display:flex}
+.spinner{width:48px;height:48px;border:3px solid #1e3550;border-top-color:#00e87a;
+         border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{color:#00e87a;font-family:'Share Tech Mono',monospace;font-size:.9em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Pair scatter selectors ──────────────────────────────── */
+.pair-controls{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.pair-controls select{background:#1a2e44;color:#dce8f5;border:1px solid #1e3550;
+                      border-radius:5px;padding:5px 8px;font-size:.8em}
+.pair-controls button{background:#162233;border:1px solid #1e3550;color:#b8cce0;
+                      padding:5px 12px;border-radius:5px;cursor:pointer;font-size:.8em}
+.pair-controls button:hover{border-color:#00e87a;color:#00e87a}
+
+/* ── Expand/collapse ─────────────────────────────────────── */
+.expander{border:1px solid #1e3550;border-radius:8px;background:#162233;margin-bottom:8px;overflow:hidden}
+.expander-header{padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;
+                 align-items:center;user-select:none;color:#b8cce0;font-size:.82em}
+.expander-header:hover{background:#1a2840}
+.expander-body{padding:14px;border-top:1px solid #1e3550;display:none}
+.expander-body.open{display:block}
+
+/* ── Chart asset selector ────────────────────────────────── */
+.asset-sel-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.asset-sel-row label{color:#b8cce0;font-size:.8em;white-space:nowrap}
+
+/* ── Download btn ────────────────────────────────────────── */
+.btn-download{background:linear-gradient(135deg,#162233,#1c2d44);border:1px solid #1e3550;
+              color:#b8cce0;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:.85em;
+              font-weight:600;letter-spacing:.05em;display:inline-flex;align-items:center;gap:6px}
+.btn-download:hover{border-color:#00e87a;color:#00e87a}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0f1923}
+::-webkit-scrollbar-thumb{background:#1e3550;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#2a4870}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .app-shell{flex-direction:column;height:auto}
+  .sidebar{width:100%;height:auto;max-height:420px}
+  .main{padding:.8rem}
+  .pros-cons{grid-template-columns:1fr}
+  .mc-weights{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Fetching market data...</div>
+</div>
+
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-title">⚙️ Parameters</div>
+      <div class="sb-subtitle">Configure analysis settings</div>
+    </div>
+
+    <div class="sb-body">
+
+      <!-- Asset Selection -->
+      <div class="sb-sec">📌 Asset Selection</div>
+      <div id="tickerRows">
+        {% for t in defaults %}{% set i = loop.index0 %}
+        <div class="sb-ticker-row" id="tickerRow{{ i }}">
+          <input class="sb-input ticker-input" placeholder="Type ticker" value="{{ t }}"
+                 id="asset_{{ i }}" style="text-transform:uppercase">
+          <select class="sb-select ticker-pick" onchange="pickTicker(this,{{ i }})"
+                  id="pick_{{ i }}">
+            <option value="">or pick</option>
+            {% for sym in popular %}
+            <option value="{{ sym }}">{{ sym }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+      <div id="extraTickerRows"></div>
+      <input type="hidden" id="numAssets" value="{{ defaults|length }}">
+      <div class="sb-btn-row">
+        <button class="btn btn-add" onclick="addAsset()">+ Add</button>
+        <button class="btn btn-rem" onclick="removeAsset()">− Remove</button>
+      </div>
+
+      <hr class="sb-hr">
+
+      <!-- Period -->
+      <div class="sb-sec">📅 Period & Frequency</div>
+      <label class="sb-label">Analysis Period</label>
+      <select class="sb-select" id="period" onchange="updateDates()" style="margin-bottom:8px">
+        <option value="30">1 Month</option>
+        <option value="90">3 Months</option>
+        <option value="180">6 Months</option>
+        <option value="365">1 Year</option>
+        <option value="730">2 Years</option>
+        <option value="1095" selected>3 Years</option>
+        <option value="1825">5 Years</option>
+        <option value="3650">10 Years</option>
+        <option value="custom">Custom</option>
+      </select>
+      <div id="customDates" style="display:none">
+        <label class="sb-label">Start</label>
+        <input type="date" class="sb-input" id="customStart" style="margin-bottom:6px">
+        <label class="sb-label">End</label>
+        <input type="date" class="sb-input" id="customEnd" style="margin-bottom:8px">
+      </div>
+      <label class="sb-label">Data Frequency</label>
+      <select class="sb-select" id="freq" style="margin-bottom:8px">
+        <option value="1d" selected>Daily</option>
+        <option value="1wk">Weekly</option>
+        <option value="1mo">Monthly</option>
+      </select>
+
+      <hr class="sb-hr">
+
+      <!-- Benchmark -->
+      <div class="sb-sec">🏁 Benchmark</div>
+      <label class="sb-label">Reference Index</label>
+      <select class="sb-select" id="benchmark" style="margin-bottom:8px">
+        {% for name, ticker in benchmarks.items() %}
+        <option value="{{ ticker }}" data-name="{{ name }}" {% if ticker == '^GSPC' %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+
+      <hr class="sb-hr">
+
+      <!-- Risk Parameters -->
+      <div class="sb-sec">⚠️ Risk Parameters</div>
+      <label class="sb-label">Risk-Free Rate (annual)</label>
+      <input type="number" class="sb-input" id="rfr" value="0.0457" step="0.0001"
+             min="0" max="0.30" style="margin-bottom:8px">
+      <label class="sb-label">Capital ($)</label>
+      <input type="number" class="sb-input" id="capital" value="10000" step="100"
+             style="margin-bottom:8px">
+      <label class="sb-label">Confidence Interval: <span id="confLabel">95%</span></label>
+      <input type="range" class="sb-range" id="conf" min="80" max="99" value="95"
+             oninput="document.getElementById('confLabel').textContent=this.value+'%'"
+             style="margin-bottom:4px">
+      <div class="sb-range-row"><span>80%</span><span>99%</span></div>
+
+      <hr class="sb-hr">
+
+      <!-- Chart Studies -->
+      <div class="sb-sec">📊 Chart Studies</div>
+      <label class="sb-check-row"><input type="checkbox" id="ema7"   checked><span>EMA 7</span></label>
+      <label class="sb-check-row"><input type="checkbox" id="ema30"  checked><span>EMA 30</span></label>
+      <label class="sb-check-row"><input type="checkbox" id="ema50"  checked><span>EMA 50</span></label>
+      <label class="sb-check-row"><input type="checkbox" id="ema200" checked><span>EMA 200</span></label>
+      <label class="sb-check-row"><input type="checkbox" id="showBB" checked><span>Bollinger Bands (20,2)</span></label>
+      <label class="sb-check-row"><input type="checkbox" id="showSigs" checked><span>Buy / Sell Signals</span></label>
+      <label class="sb-label" style="margin-top:8px">Custom EMA periods (comma-sep)</label>
+      <input type="text" class="sb-input" id="customEmas" placeholder="e.g. 10, 100, 150"
+             style="margin-bottom:8px">
+
+      <hr class="sb-hr">
+
+      <!-- DCF Params -->
+      <div class="sb-sec">💹 DCF Simulator</div>
+      <label class="sb-label">FCF growth: <span id="dcfGLabel">10.0%</span></label>
+      <input type="range" class="sb-range" id="dcfG" min="1" max="30" value="10" step="0.5"
+             oninput="document.getElementById('dcfGLabel').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      <label class="sb-label" style="margin-top:8px">WACC / Discount: <span id="dcfWaccLabel">10.0%</span></label>
+      <input type="range" class="sb-range" id="dcfWacc" min="5" max="20" value="10" step="0.5"
+             oninput="document.getElementById('dcfWaccLabel').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      <label class="sb-label" style="margin-top:8px">Terminal growth: <span id="dcfTgLabel">3.0%</span></label>
+      <input type="range" class="sb-range" id="dcfTg" min="1" max="5" value="3" step="0.25"
+             oninput="document.getElementById('dcfTgLabel').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      <label class="sb-label" style="margin-top:8px">Projection years: <span id="dcfYrsLabel">5</span></label>
+      <input type="range" class="sb-range" id="dcfYrs" min="3" max="10" value="5" step="1"
+             oninput="document.getElementById('dcfYrsLabel').textContent=this.value">
+
+      <hr class="sb-hr">
+
+      <!-- MC Portfolios -->
+      <div class="sb-sec">🎲 Monte Carlo</div>
+      <label class="sb-label">Simulated portfolios: <span id="mcNLabel">3,000</span></label>
+      <input type="range" class="sb-range" id="mcN" min="1000" max="10000" value="3000" step="1000"
+             oninput="document.getElementById('mcNLabel').textContent=parseInt(this.value).toLocaleString()">
+
+    </div><!-- /sb-body -->
+
+    <div class="sb-footer">
+      <button class="btn-run" id="runBtn" onclick="runAnalysis()">▶ Run Analysis</button>
+      <div class="sb-caption">Data: Yahoo Finance · Not financial advice.</div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────── -->
+  <main class="main" id="mainContent">
+
+    <div class="page-header">
+      <div class="page-title">📈 Financial Intelligence Platform</div>
+      <div class="page-sub">Risk &amp; Return · Technical Analysis · ML Signals · Valuation · Forecasting</div>
+    </div>
+
+    <!-- Welcome state -->
+    <div class="welcome-box" id="welcomeBox">
+      <h2 style="color:#00e87a;font-family:'Share Tech Mono',monospace">Configure &amp; Run</h2>
+      <p>Set tickers and parameters in the left panel, then click <strong>▶ Run Analysis</strong>.</p>
+    </div>
+
+    <!-- Results (hidden until analysis runs) -->
+    <div id="results" style="display:none">
+
+      <!-- VIX bar -->
+      <div id="vixBar"></div>
+
+      <!-- Tabs -->
+      <div class="tab-bar" id="tabBar">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab-btn" onclick="switchTab('benchmark')">Benchmark</button>
+        <button class="tab-btn" onclick="switchTab('correlation')">Correlation</button>
+        <button class="tab-btn" onclick="switchTab('covariance')">Covariance</button>
+        <button class="tab-btn" onclick="switchTab('risk')">Risk Metrics</button>
+        <button class="tab-btn" onclick="switchTab('simulator')">Simulator</button>
+        <button class="tab-btn" onclick="switchTab('export')">Export</button>
+      </div>
+
+      <!-- ── OVERVIEW TAB ──────────────────────────────────── -->
+      <div class="tab-pane active" id="tab-overview">
+        <div class="sec-hdr" id="overviewHeader">Selected Assets</div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <hr style="border-color:#1e3550;margin:12px 0">
+        <div class="sec-hdr">Cumulative Return — Animated</div>
+        <div class="chart-box"><div class="echarts-container" id="chartCumulative" style="height:320px"></div></div>
+        <hr style="border-color:#1e3550;margin:12px 0">
+        <div class="sec-hdr">Price Chart (Heikin Ashi)</div>
+        <div class="asset-sel-row">
+          <label>Asset:</label>
+          <select class="sb-select" id="chartAssetSel" onchange="switchCandleChart(this.value)" style="width:auto;max-width:200px"></select>
+        </div>
+        <div id="trendBar"></div>
+        <div class="chart-box"><div class="echarts-container" id="chartCandle" style="height:640px"></div></div>
+        <hr style="border-color:#1e3550;margin:12px 0">
+        <div class="sec-hdr">Signal Analysis &amp; Insights</div>
+        <div id="signalCards"></div>
+      </div>
+
+      <!-- ── BENCHMARK TAB ─────────────────────────────────── -->
+      <div class="tab-pane" id="tab-benchmark">
+        <div class="sec-hdr" id="benchHeader">Performance vs Benchmark</div>
+        <div class="chart-box"><div class="plotly-container" id="chartPerf" style="height:380px"></div></div>
+        <div class="chart-box" id="rollingBetaBox" style="display:none">
+          <div class="plotly-container" id="chartRollingBeta" style="height:320px"></div>
+        </div>
+        <div class="sec-hdr">Summary Table</div>
+        <div class="data-table-wrap" id="benchTable"></div>
+      </div>
+
+      <!-- ── CORRELATION TAB ───────────────────────────────── -->
+      <div class="tab-pane" id="tab-correlation">
+        <div class="sec-hdr">Returns Correlation Matrix</div>
+        <div class="chart-box"><div class="echarts-container" id="chartCorrHeatmap" style="height:480px"></div></div>
+        <div class="data-table-wrap" id="corrTable"></div>
+        <div class="sec-hdr" style="margin-top:16px">Rolling 30-Day Correlation vs Benchmark</div>
+        <div class="chart-box" id="rollingCorrBox">
+          <div class="plotly-container" id="chartRollingCorr" style="height:280px"></div>
+        </div>
+        <div class="sec-hdr" style="margin-top:16px">Pair Returns Scatter</div>
+        <div class="pair-controls" id="pairControls">
+          <select id="pairX"></select>
+          <span style="color:#7090b0">vs</span>
+          <select id="pairY"></select>
+          <button onclick="loadPairScatter()">Update</button>
+        </div>
+        <div class="chart-box"><div class="plotly-container" id="chartPairScatter" style="height:420px"></div></div>
+        <div class="chart-box" id="scatterMatBox" style="display:none">
+          <div class="sec-hdr" style="margin:12px 14px 4px">Returns Scatter Matrix</div>
+          <div class="plotly-container" id="chartScatterMatrix" style="height:600px"></div>
+        </div>
+      </div>
+
+      <!-- ── COVARIANCE TAB ────────────────────────────────── -->
+      <div class="tab-pane" id="tab-covariance">
+        <div class="sec-hdr">Annualized Covariance Matrix</div>
+        <div class="chart-box"><div class="echarts-container" id="chartCovHeatmap" style="height:480px"></div></div>
+        <div class="data-table-wrap" id="covTable"></div>
+        <div class="chart-box" style="margin-top:12px">
+          <div class="plotly-container" id="chartVolBar" style="height:320px"></div>
+        </div>
+        <hr style="border-color:#1e3550;margin:16px 0">
+        <div class="sec-hdr">Monte Carlo Efficient Frontier</div>
+        <div class="chart-box"><div class="plotly-container" id="chartMCFrontier" style="height:520px"></div></div>
+        <div class="mc-weights" id="mcWeights"></div>
+        <div class="mc-box" id="mcExplain" style="display:none">
+          <strong>How to read this chart</strong><br><br>
+          Each point represents a randomly generated portfolio. The <strong>color gradient</strong> shows the Sharpe ratio
+          — <span style="color:#00e87a">green = high risk-adjusted return</span>, <span style="color:#ff4545">red = low</span>.<br><br>
+          The <span style="color:#00e87a">★ star</span> marks the <strong>Maximum Sharpe portfolio</strong> — optimal under Modern Portfolio Theory.<br>
+          The <span style="color:#4da6ff">◆ diamond</span> marks the <strong>Minimum Volatility portfolio</strong> — most conservative allocation.
+        </div>
+      </div>
+
+      <!-- ── RISK METRICS TAB ──────────────────────────────── -->
+      <div class="tab-pane" id="tab-risk">
+        <div class="sec-hdr">Risk &amp; Return Metrics</div>
+        <div class="data-table-wrap" id="riskTable"></div>
+        <div class="chart-box"><div class="plotly-container" id="chartRRScatter" style="height:440px"></div></div>
+        <div class="chart-box"><div class="plotly-container" id="chartDrawdown" style="height:320px"></div></div>
+        <div class="sec-hdr" style="margin-top:16px">CBOE Volatility Index (VIX)</div>
+        <div class="chart-box"><div class="plotly-container" id="chartVIX" style="height:280px"></div></div>
+        <div class="info-box">VIX &lt; 15: low fear · 15–25: normal · 25–35: elevated risk-off · &gt; 35: extreme stress</div>
+      </div>
+
+      <!-- ── SIMULATOR TAB ─────────────────────────────────── -->
+      <div class="tab-pane" id="tab-simulator">
+        <div class="sec-hdr">Fundamental Analysis &amp; Valuation Simulator</div>
+        <div class="asset-sel-row">
+          <label>Asset:</label>
+          <select class="sb-select" id="simAssetSel" onchange="loadSimulator(this.value)" style="width:auto;max-width:200px"></select>
+        </div>
+        <div id="simContent"></div>
+      </div>
+
+      <!-- ── EXPORT TAB ────────────────────────────────────── -->
+      <div class="tab-pane" id="tab-export">
+        <div class="sec-hdr">Export Analysis to Excel</div>
+        <p style="color:#b8cce0;font-size:.85em;margin-bottom:16px">
+          Generates a multi-sheet workbook with price data, returns, risk metrics,
+          correlation and annualized covariance matrices.
+        </p>
+        <button class="btn-download" id="downloadBtn" onclick="downloadExcel()">
+          📥 Build &amp; Download Excel Report
+        </button>
+        <div style="margin-top:16px;color:#b8cce0;font-size:.82em;line-height:1.8">
+          <strong>Report sheets:</strong><br>
+          · One sheet per ticker — full OHLCV history<br>
+          · <code style="color:#ffd700">Returns</code> — daily return matrix<br>
+          · <code style="color:#ffd700">Risk_Metrics</code> — Sharpe, Sortino, Beta, Alpha, VaR, CVaR, Calmar, Treynor, Info. Ratio<br>
+          · <code style="color:#ffd700">Correlation</code> — pairwise return correlations<br>
+          · <code style="color:#ffd700">Covariance_Ann</code> — annualized covariance matrix
+        </div>
+      </div>
+
+    </div><!-- /results -->
+  </main>
+</div><!-- /app-shell -->
+
+<!-- Main JS -->
+<script>
+// ── Global state ──────────────────────────────────────────
+let _lastParams = null;
+let _lastResult = null;
+let _echartsInstances = {};
+
+// Pass Jinja2 data to JS
+const POPULAR = {{ popular | tojson }};
+
+// ── Jinja enumerate fix ───────────────────────────────────
+// (already handled in template above via loop index)
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
