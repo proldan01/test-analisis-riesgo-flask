@@ -11,6 +11,39 @@ let _echartsInstances = {};   // id → echarts instance
 let _numAssets = parseInt(document.getElementById('numAssets').value, 10);
 let _activeTab = 'overview';
 
+// ── Sidebar toggle ────────────────────────────────────────
+function toggleSidebar() {
+  const sb       = document.getElementById('sidebar');
+  const floatBtn = document.getElementById('sbFloatBtn');
+  const colBtn   = sb.querySelector('.sb-collapse-btn');
+  const isNowCollapsed = sb.classList.toggle('collapsed');
+
+  // Update button icons
+  if (colBtn)   colBtn.textContent = isNowCollapsed ? '▶' : '◀';
+  if (floatBtn) floatBtn.style.display = isNowCollapsed ? 'flex' : 'none';
+
+  // Persist preference
+  localStorage.setItem('sbCollapsed', isNowCollapsed ? '1' : '0');
+
+  // Resize charts after transition finishes
+  setTimeout(resizeAllCharts, 300);
+}
+
+// Restore sidebar state from localStorage on load
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('sbCollapsed') === '1') {
+    // Collapse without animation on first load
+    const sb = document.getElementById('sidebar');
+    sb.style.transition = 'none';
+    sb.classList.add('collapsed');
+    const floatBtn = document.getElementById('sbFloatBtn');
+    if (floatBtn) floatBtn.style.display = 'flex';
+    const colBtn = sb.querySelector('.sb-collapse-btn');
+    if (colBtn) colBtn.textContent = '▶';
+    setTimeout(() => { sb.style.transition = ''; }, 50);
+  }
+});
+
 // ── Tab switching ─────────────────────────────────────────
 function switchTab(name) {
   _activeTab = name;

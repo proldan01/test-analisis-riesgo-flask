@@ -1407,5 +1407,29 @@ def download():
         return jsonify({'ok':False,'error':str(e)}), 500
 
 
+@app.route('/ping')
+def ping():
+    """Diagnostic endpoint — tests imports and a quick yfinance fetch."""
+    import traceback as tb
+    report = {
+        'status': 'ok',
+        'python': __import__('sys').version,
+        'flask_ok': True,
+        'plotly_ok': PLOTLY_OK,
+        'sklearn_ok': SKLEARN_OK,
+        'arima_ok': ARIMA_OK,
+        'yfinance_test': None,
+        'error': None,
+    }
+    try:
+        df = yf.Ticker('AAPL').history(period='5d', auto_adjust=True)
+        report['yfinance_test'] = f'OK — {len(df)} rows for AAPL'
+    except Exception as e:
+        report['yfinance_test'] = 'FAILED'
+        report['error'] = str(e)
+        report['status'] = 'degraded'
+    return jsonify(report)
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
